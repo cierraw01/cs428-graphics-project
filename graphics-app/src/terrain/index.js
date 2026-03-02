@@ -10,6 +10,7 @@
  *   updateTerrain(camera)       – (stub) will stream/recycle chunks later
  */
 
+
 import * as THREE from 'three';
 import { createSeededNoise2D, fbm } from '../utils/index.js';
 
@@ -158,4 +159,91 @@ export function createTerrain(scene, seed) {
  */
 export function updateTerrain(_camera) {
   // TODO: implement chunk loading/unloading around camera
+}
+
+import * as THREE from "three";
+
+let sceneRef;
+const chunks = new Map();
+
+// settings
+const CHUNK_SIZE = 120;
+const VIEW_RADIUS = 2;
+
+const key = (x, z) => `${x},${z}`;
+const worldToChunk = (v) => Math.floor(v / CHUNK_SIZE);
+
+// ---------- CREATE CHUNK ----------
+function createChunk(cx, cz) {
+  const geo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x3a7d44,
+    roughness: 0.9
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.receiveShadow = true;
+
+  mesh.position.set(
+    cx * CHUNK_SIZE + CHUNK_SIZE / 2,
+    0,
+    cz * CHUNK_SIZE + CHUNK_SIZE / 2
+  );
+
+  sceneRef.add(mesh);
+  chunks.set(key(cx, cz), mesh);
+}
+
+// REMOVE CHUNK 
+function removeChunk(k) {
+  const mesh = chunks.get(k);
+  if (!mesh) return;
+
+  sceneRef.remove(mesh);
+  mesh.geometry.dispose();
+  mesh.material.dispose();
+  chunks.delete(k);
+}
+
+// PUBLIC: CREATE INITIAL TERRAIN 
+export function createTerrain(scene) {
+  sceneRef = scene;
+}
+
+// PUBLIC: UPDATE STREAMING 
+let lastCX = null;
+let lastCZ = null;
+
+export function updateTerrain(camera) {
+  const cx = worldToChunk(camera.position.x);
+  const cz = worldToChunk(camera.position.z);
+
+  if (cx === lastCX && cz === lastCZ) return;
+
+  lastCX = cx;
+  lastCZ = cz;
+
+  const needed = new Set();
+
+  for (let dz = -VIEW_RADIUS; dz <= VIEW_RADIUS; dz++) {
+    for (let dx = -VIEW_RADIUS; dx <= VIEW_RADIUS; dx++) {
+      const nx = cx + dx;
+      const nz = cz + dz;
+      const k = key(nx, nz);
+
+      needed.add(k);
+
+      if (!chunks.has(k)) {
+        createChunk(nx, nz);
+      }
+    }
+  }
+
+  // remove old chunks
+  for (const k of chunks.keys()) {
+    if (!needed.has(k)) {
+      removeChunk(k);
+    }
+  }
 }
