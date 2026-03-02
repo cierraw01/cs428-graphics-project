@@ -25,10 +25,10 @@ const { camera, controls, update: updateCamera } = createCamera(renderer.domElem
 const env = createEnvironment(scene);
 
 // --- Procedural Terrain ---
-const terrain = createTerrain(scene, SEED);
+createTerrain(scene, SEED);
 
 // --- Clock ---
-const clock = new THREE.Timer();
+const clock = new THREE.Clock();
 
 // --- Animate ---
 function animate() {

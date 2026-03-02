@@ -9,7 +9,7 @@
  *   random()           — next random float in [0, 1)
  */
 
-import seedrandom from "seedrandom";
+import seedrandom from 'seedrandom';
 
 let rng = Math.random;
 
