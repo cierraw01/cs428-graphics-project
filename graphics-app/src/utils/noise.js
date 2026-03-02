@@ -50,6 +50,8 @@ export function fbm(
   y,
   { octaves = 6, lacunarity = 2.0, gain = 0.5, scale = 1.0 } = {}
 ) {
+  if (octaves <= 0) return 0;
+
   let sum = 0;       // accumulated noise value
   let amplitude = 1; // current octave amplitude
   let frequency = scale;  // current octave frequency
@@ -86,6 +88,8 @@ export function ridgeFbm(
   y,
   { octaves = 6, lacunarity = 2.0, gain = 0.5, scale = 1.0 } = {}
 ) {
+  if (octaves <= 0) return 0;
+
   let sum = 0;
   let amplitude = 1;
   let frequency = scale;
