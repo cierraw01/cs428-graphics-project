@@ -10,8 +10,8 @@
  *   updateTerrain(camera)       – (stub) will stream/recycle chunks later
  */
 
-import * as THREE from "three";
-import { createSeededNoise2D, fbm } from "../utils/index.js";
+import * as THREE from 'three';
+import { createSeededNoise2D, fbm } from '../utils/index.js';
 
 // ─── Terrain configuration ──────────────────────────────────────────
 // Tweak these to change the look of the world.

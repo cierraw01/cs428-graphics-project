@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createSeededNoise2D, fbm, ridgeFbm } from "./index.js";
+import { describe, it, expect } from 'vitest';
+import { createSeededNoise2D, fbm, ridgeFbm } from './index.js';
 
 describe("createSeededNoise2D", () => {
   it("returns values in [-1, 1]", () => {

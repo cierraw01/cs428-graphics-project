@@ -10,8 +10,8 @@
  *   ridgeFbm(noiseFn, x, y, opts) — ridged variant for mountain ranges
  */
 
-import { createNoise2D } from "simplex-noise";
-import seedrandom from "seedrandom";
+import { createNoise2D } from 'simplex-noise';
+import seedrandom from 'seedrandom';
 
 // ─── Core noise factory ──────────────────────────────────────────────
 

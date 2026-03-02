@@ -36,8 +36,8 @@ graphics-app/
 │   ├── terrain/                Procedural terrain generation
 │   │   └── index.js            Heightmap mesh from seeded noise + altitude colouring
 │   │
-│   ├── ui/                     UI overlay (planned)
-│   │   └── index.js            (stub — seed input, sliders, debug panel)
+│   ├── ui/                     Custom UI overlay
+│   │   └── index.js            (seed input, sliders, debug panel)
 │   │
 │   └── utils/                  Shared helpers
 │       ├── index.js            Barrel exports
