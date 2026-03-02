@@ -1,11 +1,10 @@
-import seedrandom from "seedrandom";
+/**
+ * utils/ barrel — re-exports every utility so the rest of the app
+ * can do:  import { seedRandom, fbm, ... } from './utils/index.js'
+ */
 
-let rng = Math.random;
+// ── Seeded PRNG ─────────────────────────────────────────────────────
+export { seedRandom, random } from './random.js';
 
-export function seedRandom(seed) {
-  rng = seedrandom(seed);
-}
-
-export function random() {
-  return rng();
-}
+// ── Noise functions ─────────────────────────────────────────────────
+export { createSeededNoise2D, fbm, ridgeFbm } from './noise.js';
