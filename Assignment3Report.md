@@ -6,7 +6,7 @@ Link to GitHub:
 
 ## Phase 2: The Demo Video
 Link to Video: 
-[]()
+[https://drive.google.com/file/d/1WBF05EWBLtLJFv0dJ24qhYY2a7phdAJZ/view?usp=sharing](https://drive.google.com/file/d/1WBF05EWBLtLJFv0dJ24qhYY2a7phdAJZ/view?usp=sharing)
 
 ## Phase 3: The Midterm Report (Post-Mortem)
 
