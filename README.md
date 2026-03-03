@@ -20,7 +20,7 @@ An interactive, procedurally generated 3D world built with Three.js. Fly around 
 ## Project Structure
 
 ```
-graphics-app/
+docs/
 ├── index.html                  Entry point
 ├── package.json
 ├── docs/
