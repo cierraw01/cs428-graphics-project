@@ -23,7 +23,7 @@ An interactive, procedurally generated 3D world built with Three.js. Fly around 
 graphics-app/
 ├── index.html                  Entry point
 ├── package.json
-├── src/
+├── docs/
 │   ├── main.js                 App entry — sets up scene, terrain, and render loop
 │   ├── style.css               Global styles
 │   │
@@ -52,7 +52,7 @@ graphics-app/
 
 ### Install
 ```sh
-cd graphics-app
+cd docs
 npm install
 ```
 
