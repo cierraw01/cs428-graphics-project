@@ -98,34 +98,56 @@ function createChunk(cx, cz) {
 
   const positions = geometry.attributes.position;
   const colours   = new Float32Array(positions.count * 3);
-  const tempCol   = new THREE.Color();
-
-  let minY =  Infinity;
-  let maxY = -Infinity;
+  const tempCol   = new THREE.Color(); 
 
   // --- First pass: displace vertices with noise ---
-  for (let i = 0; i < positions.count; i++) {
-    // Local vertex position → world position for noise sampling
-    const wx = positions.getX(i) + originX + CHUNK_SIZE / 2;
-    const wz = positions.getZ(i) + originZ + CHUNK_SIZE / 2;
 
-    const h = fbm(noise2D, wx, wz, NOISE_OPTS) * HEIGHT_SCALE;
-    positions.setY(i, h);
+for (let i = 0; i < positions.count; i++) {
+  // local vertex position -> world position for noise sampling
+  const wx = positions.getX(i) + originX + CHUNK_SIZE / 2;
+  const wz = positions.getZ(i) + originZ + CHUNK_SIZE / 2;
 
-    if (h < minY) minY = h;
-    if (h > maxY) maxY = h;
-  }
+  // base terrain noise
+  // this keeps the smaller hills and terrain details
+  const baseHeight = fbm(noise2D, wx, wz, NOISE_OPTS);
 
-  // --- Second pass: assign vertex colours by normalised height ---
-  const range = maxY - minY || 1;
+  // macro noise for bigger world variation
+  // this helps the terrain feel less repetitive over long travel
+  const macro = fbm(noise2D, wx * 0.0003, wz * 0.0003, {
+    octaves: 2,
+    lacunarity: 2.0,
+    gain: 0.5,
+    scale: 1,
+  });
 
-  for (let i = 0; i < positions.count; i++) {
-    const t = (positions.getY(i) - minY) / range;
-    sampleColour(t, tempCol);
-    colours[i * 3]     = tempCol.r;
-    colours[i * 3 + 1] = tempCol.g;
-    colours[i * 3 + 2] = tempCol.b;
-  }
+  // combine detail noise and large-scale variation
+  // baseHeight gives normal terrain detail
+  // macro pushes some areas flatter and some areas more dramatic
+  const h = (baseHeight + macro * 0.8) * HEIGHT_SCALE;
+
+  // apply the final height to this vertex
+  positions.setY(i, h);
+}
+
+
+// use a more stable height-to-color mapping so neighboring chunks match better
+// this avoids each chunk using its own private min/max for colors
+const MIN_TERRAIN_HEIGHT = -HEIGHT_SCALE * 1.2;
+const MAX_TERRAIN_HEIGHT = HEIGHT_SCALE * 1.8;
+const globalRange = MAX_TERRAIN_HEIGHT - MIN_TERRAIN_HEIGHT;
+
+for (let i = 0; i < positions.count; i++) {
+  // normalize height using shared terrain bounds instead of per-chunk bounds
+  let t = (positions.getY(i) - MIN_TERRAIN_HEIGHT) / globalRange;
+
+  // clamp so it always stays between 0 and 1
+  t = Math.max(0, Math.min(1, t));
+
+  sampleColour(t, tempCol);
+  colours[i * 3] = tempCol.r;
+  colours[i * 3 + 1] = tempCol.g;
+  colours[i * 3 + 2] = tempCol.b;
+}
 
   geometry.setAttribute("color", new THREE.BufferAttribute(colours, 3));
   geometry.computeVertexNormals();
@@ -164,6 +186,15 @@ function removeChunk(k) {
   mesh.material.dispose();
   chunks.delete(k);
 }
+function clearAllChunks() {
+  for (const k of chunks.keys()) {
+    removeChunk(k);
+  }
+
+  // reset cached camera chunk so terrain can rebuild correctly
+  lastCX = null;
+  lastCZ = null;
+}
 
 // ─── Public API ─────────────────────────────────────────────────────
 
@@ -176,6 +207,7 @@ function removeChunk(k) {
 export function createTerrain(scene, seed) {
   sceneRef = scene;
   noise2D  = createSeededNoise2D(seed);
+  clearAllChunks(); 
 }
 
 /**
