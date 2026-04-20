@@ -6,9 +6,9 @@ export function createRenderer(container) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.5;
+  renderer.toneMappingExposure = 0.6;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   container.appendChild(renderer.domElement);

@@ -1,118 +1,282 @@
 /**
- * UI module -- Custom overlay for user controls.
+ * UI module — Polished glassmorphic overlay with working controls.
  *
- * Planned controls:
- *   - Seed input
- *   - Time-of-day slider
- *   - Fog / visibility controls
- *   - Weather intensity
- *   - Debug toggles
+ * Controls:
+ *   - Seed input + Regenerate (dispatches ui:regenerateSeed → main.js listens)
+ *   - Time-of-day presets (Dawn / Day / Sunset / Night)
+ *   - Sun elevation & azimuth sliders
+ *   - Fog density slider
+ *   - Bloom strength slider
+ *   - FPS stats toggle
+ *   - Collapsible keyboard-controls help
  */
 
-export default function createUI(env, scene) {
-  // container
-  const root = document.createElement('div');
-  root.id = 'overlay-controls';
-  root.style.cssText = [
-    'position:fixed',
-    'right:12px',
-    'top:12px',
-    'padding:10px',
-    'background:rgba(20,20,20,0.65)',
-    'color:#fff',
-    'font-family:system-ui, sans-serif',
-    'font-size:13px',
-    'border-radius:8px',
-    'z-index:9999',
-    'min-width:180px'
-  ].join(';');
+export default function createUI(env, scene, options = {}) {
+  const { postprocessing, stats } = options;
 
-  // helper to create labeled control
-  function labeled(labelText, control) {
+  // ── Root panel ─────────────────────────────────────────────────────
+  const root = document.createElement('div');
+  root.id = 'control-panel';
+
+  // ── Title bar ──────────────────────────────────────────────────────
+  const titleBar = document.createElement('div');
+  titleBar.className = 'cp-title-bar';
+
+  const titleText = document.createElement('span');
+  titleText.className = 'cp-title';
+  titleText.textContent = 'Terrain Explorer';
+  titleBar.appendChild(titleText);
+
+  const collapseBtn = document.createElement('button');
+  collapseBtn.className = 'cp-collapse-btn';
+  collapseBtn.textContent = '—';
+  collapseBtn.title = 'Collapse panel';
+  titleBar.appendChild(collapseBtn);
+  root.appendChild(titleBar);
+
+  // ── Collapsible body ───────────────────────────────────────────────
+  const body = document.createElement('div');
+  body.className = 'cp-body';
+
+  let collapsed = false;
+  collapseBtn.onclick = () => {
+    collapsed = !collapsed;
+    body.style.display = collapsed ? 'none' : '';
+    collapseBtn.textContent = collapsed ? '+' : '—';
+  };
+
+  // ──────────────────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────────────────
+
+  function section(title) {
+    const el = document.createElement('div');
+    el.className = 'cp-section-title';
+    el.textContent = title;
+    body.appendChild(el);
+  }
+
+  function row(label, control, valueDisplay) {
     const wrap = document.createElement('div');
-    wrap.style.marginBottom = '8px';
-    const label = document.createElement('div');
-    label.textContent = labelText;
-    label.style.marginBottom = '4px';
-    wrap.appendChild(label);
+    wrap.className = 'cp-row';
+
+    const lbl = document.createElement('label');
+    lbl.className = 'cp-label';
+    lbl.textContent = label;
+    wrap.appendChild(lbl);
+
+    if (valueDisplay) {
+      lbl.appendChild(valueDisplay);
+    }
+
     wrap.appendChild(control);
+    body.appendChild(wrap);
     return wrap;
   }
 
-  // Seed input + button (dispatches event for terrain regeneration)
+  function valueSpan(initial) {
+    const sp = document.createElement('span');
+    sp.className = 'cp-value';
+    sp.textContent = initial;
+    return sp;
+  }
+
+  function slider(min, max, step, value) {
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.value = String(value);
+    return input;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 1. Seed
+  // ──────────────────────────────────────────────────────────────────
+  section('World Seed');
+
+  const seedRow = document.createElement('div');
+  seedRow.className = 'cp-seed-row';
+
   const seedInput = document.createElement('input');
-  seedInput.type = 'number';
-  seedInput.value = 123;
-  seedInput.style.width = '100%';
+  seedInput.type = 'text';
+  seedInput.id = 'seed-input';
+  seedInput.className = 'cp-seed-input';
+  seedInput.value = 'demo-seed';
+  seedInput.placeholder = 'Enter seed…';
+  seedRow.appendChild(seedInput);
+
   const regenBtn = document.createElement('button');
-  regenBtn.textContent = 'Regenerate';
-  regenBtn.style.marginTop = '6px';
-  regenBtn.style.width = '100%';
+  regenBtn.id = 'btn-regenerate';
+  regenBtn.className = 'cp-btn cp-btn-primary';
+  regenBtn.textContent = 'Generate';
   regenBtn.onclick = () => {
-    const seed = Number(seedInput.value) || 0;
+    const seed = seedInput.value.trim() || 'demo-seed';
     window.dispatchEvent(new CustomEvent('ui:regenerateSeed', { detail: { seed } }));
   };
-  const seedWrap = labeled('Seed', seedInput);
-  seedWrap.appendChild(regenBtn);
-  root.appendChild(seedWrap);
+  seedRow.appendChild(regenBtn);
 
-  // Fog slider
-  const fogInput = document.createElement('input');
-  fogInput.type = 'range';
-  fogInput.min = '0';
-  fogInput.max = '0.01';
-  fogInput.step = '0.0001';
-  fogInput.value = (scene.fog && scene.fog.density) ? scene.fog.density : 0.0015;
-  fogInput.style.width = '100%';
-  fogInput.oninput = () => {
-    if (scene.fog && typeof scene.fog.density === 'number') {
-      scene.fog.density = Number(fogInput.value);
-    }
+  const randomBtn = document.createElement('button');
+  randomBtn.id = 'btn-random-seed';
+  randomBtn.className = 'cp-btn cp-btn-secondary';
+  randomBtn.textContent = '🎲';
+  randomBtn.title = 'Random seed';
+  randomBtn.onclick = () => {
+    const randSeed = Math.random().toString(36).substring(2, 10);
+    seedInput.value = randSeed;
+    window.dispatchEvent(new CustomEvent('ui:regenerateSeed', { detail: { seed: randSeed } }));
   };
-  root.appendChild(labeled('Fog density', fogInput));
+  seedRow.appendChild(randomBtn);
 
-  // Sun elevation + azimuth
-  const elevInput = document.createElement('input');
-  elevInput.type = 'range';
-  elevInput.min = '0';
-  elevInput.max = '90';
-  elevInput.step = '1';
-  elevInput.value = '30';
-  elevInput.style.width = '100%';
-  const azimInput = document.createElement('input');
-  azimInput.type = 'range';
-  azimInput.min = '0';
-  azimInput.max = '360';
-  azimInput.step = '1';
-  azimInput.value = '180';
-  azimInput.style.width = '100%';
+  body.appendChild(seedRow);
 
-  function updateSun() {
-    const e = Number(elevInput.value);
-    const a = Number(azimInput.value);
-    if (env && typeof env.update === 'function') env.update(e, a);
+  // ──────────────────────────────────────────────────────────────────
+  // 2. Time-of-day presets
+  // ──────────────────────────────────────────────────────────────────
+  section('Time of Day');
+
+  const presetRow = document.createElement('div');
+  presetRow.className = 'cp-preset-row';
+
+  const presets = [
+    { label: '🌅 Dawn',    elev: 5,  azim: 90  },
+    { label: '☀️ Day',     elev: 55, azim: 180 },
+    { label: '🌇 Sunset',  elev: 8,  azim: 270 },
+    { label: '🌙 Night',   elev: -5, azim: 180 },
+  ];
+
+  presets.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'cp-btn cp-btn-preset';
+    btn.textContent = p.label;
+    btn.onclick = () => {
+      elevSlider.value = String(p.elev);
+      azimSlider.value = String(p.azim);
+      elevVal.textContent = p.elev;
+      azimVal.textContent = p.azim;
+      env.update(p.elev, p.azim);
+    };
+    presetRow.appendChild(btn);
+  });
+  body.appendChild(presetRow);
+
+  // ──────────────────────────────────────────────────────────────────
+  // 3. Sun controls
+  // ──────────────────────────────────────────────────────────────────
+  section('Sun Position');
+
+  const elevVal = valueSpan('30');
+  const elevSlider = slider(-10, 90, 1, 30);
+  elevSlider.id = 'slider-elevation';
+  elevSlider.oninput = () => {
+    elevVal.textContent = elevSlider.value;
+    env.update(Number(elevSlider.value), Number(azimSlider.value));
+  };
+  row('Elevation', elevSlider, elevVal);
+
+  const azimVal = valueSpan('180');
+  const azimSlider = slider(0, 360, 1, 180);
+  azimSlider.id = 'slider-azimuth';
+  azimSlider.oninput = () => {
+    azimVal.textContent = azimSlider.value;
+    env.update(Number(elevSlider.value), Number(azimSlider.value));
+  };
+  row('Azimuth', azimSlider, azimVal);
+
+  // ──────────────────────────────────────────────────────────────────
+  // 4. Atmosphere
+  // ──────────────────────────────────────────────────────────────────
+  section('Atmosphere');
+
+  const fogVal = valueSpan('0.0012');
+  const fogSlider = slider(0, 0.006, 0.0001, env.getFogDensity());
+  fogSlider.id = 'slider-fog';
+  fogSlider.oninput = () => {
+    const v = Number(fogSlider.value);
+    fogVal.textContent = v.toFixed(4);
+    env.setFogDensity(v);
+  };
+  row('Fog Density', fogSlider, fogVal);
+
+  if (postprocessing) {
+    const bloomVal = valueSpan(postprocessing.getBloomStrength().toFixed(2));
+    const bloomSlider = slider(0, 1.5, 0.01, postprocessing.getBloomStrength());
+    bloomSlider.id = 'slider-bloom';
+    bloomSlider.oninput = () => {
+      const v = Number(bloomSlider.value);
+      bloomVal.textContent = v.toFixed(2);
+      postprocessing.setBloomStrength(v);
+    };
+    row('Bloom', bloomSlider, bloomVal);
   }
-  elevInput.oninput = updateSun;
-  azimInput.oninput = updateSun;
 
-  root.appendChild(labeled('Sun elevation', elevInput));
-  root.appendChild(labeled('Sun azimuth', azimInput));
+  // ──────────────────────────────────────────────────────────────────
+  // 5. Toggles
+  // ──────────────────────────────────────────────────────────────────
+  section('Display');
 
-  // small credits / instructions
-  const hint = document.createElement('div');
-  hint.style.opacity = '0.8';
-  hint.style.fontSize = '11px';
-  hint.style.marginTop = '6px';
-  hint.textContent = 'Seed: dispatches "ui:regenerateSeed" event';
-  root.appendChild(hint);
+  if (stats) {
+    const statsToggle = document.createElement('div');
+    statsToggle.className = 'cp-row cp-toggle-row';
 
+    const statsLabel = document.createElement('label');
+    statsLabel.className = 'cp-label';
+    statsLabel.textContent = 'FPS Counter';
+
+    const statsCheck = document.createElement('input');
+    statsCheck.type = 'checkbox';
+    statsCheck.id = 'toggle-fps';
+    statsCheck.checked = true;
+    statsCheck.className = 'cp-checkbox';
+    statsCheck.onchange = () => {
+      stats.dom.style.display = statsCheck.checked ? '' : 'none';
+    };
+
+    statsToggle.appendChild(statsLabel);
+    statsToggle.appendChild(statsCheck);
+    body.appendChild(statsToggle);
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 6. Controls help
+  // ──────────────────────────────────────────────────────────────────
+  section('Keyboard Controls');
+
+  const controlsList = document.createElement('div');
+  controlsList.className = 'cp-controls-list';
+  controlsList.innerHTML = `
+    <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</div>
+    <div><kbd>Space</kbd> Ascend · <kbd>Ctrl</kbd> Descend</div>
+    <div><kbd>Shift</kbd> Sprint · <kbd>Esc</kbd> Release cursor</div>
+  `;
+  body.appendChild(controlsList);
+
+  // ── Credits ────────────────────────────────────────────────────────
+  const credits = document.createElement('div');
+  credits.className = 'cp-credits';
+  credits.textContent = 'CS 428 — Terrain Explorer';
+  body.appendChild(credits);
+
+  // ── Mount ──────────────────────────────────────────────────────────
+  root.appendChild(body);
   document.body.appendChild(root);
 
-  // expose a simple API (optional)
+  // ── Public API ─────────────────────────────────────────────────────
   return {
     root,
     setSeed(v) { seedInput.value = String(v); },
-    setFog(v) { fogInput.value = String(v); scene.fog && (scene.fog.density = Number(v)); },
-    setSun(e, a) { elevInput.value = String(e); azimInput.value = String(a); updateSun(); }
+    setFog(v) {
+      fogSlider.value = String(v);
+      fogVal.textContent = Number(v).toFixed(4);
+      env.setFogDensity(Number(v));
+    },
+    setSun(e, a) {
+      elevSlider.value = String(e);
+      azimSlider.value = String(a);
+      elevVal.textContent = e;
+      azimVal.textContent = a;
+      env.update(e, a);
+    },
   };
 }
