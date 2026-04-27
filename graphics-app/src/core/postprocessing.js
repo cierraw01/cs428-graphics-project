@@ -70,12 +70,12 @@ export function createPostProcessing(renderer, scene, camera) {
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
-  // 2. HDR Bloom
+  // 2. HDR Bloom (disabled by default — slider can re-enable)
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(size.x, size.y),
-    0.35,   // strength — subtle
-    0.6,    // radius
-    0.85    // threshold — only bright pixels bloom
+    0.0,    // strength — off by default, avoids white wash
+    0.4,    // radius
+    0.92    // threshold
   );
   composer.addPass(bloomPass);
 

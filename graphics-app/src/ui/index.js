@@ -140,10 +140,10 @@ export default function createUI(env, scene, options = {}) {
   presetRow.className = 'cp-preset-row';
 
   const presets = [
-    { label: '🌅 Dawn',    elev: 5,  azim: 90  },
-    { label: '☀️ Day',     elev: 55, azim: 180 },
-    { label: '🌇 Sunset',  elev: 8,  azim: 270 },
-    { label: '🌙 Night',   elev: -5, azim: 180 },
+    { label: '🌅 Dawn', elev: 8, azim: 80 },
+    { label: '☀️ Day', elev: 50, azim: 200 },
+    { label: '🌇 Sunset', elev: 5, azim: 290 },
+    { label: '🌙 Night', elev: -5, azim: 180 },
   ];
 
   presets.forEach(p => {
@@ -166,8 +166,8 @@ export default function createUI(env, scene, options = {}) {
   // ──────────────────────────────────────────────────────────────────
   section('Sun Position');
 
-  const elevVal = valueSpan('30');
-  const elevSlider = slider(-10, 90, 1, 30);
+  const elevVal = valueSpan('45');
+  const elevSlider = slider(-10, 90, 1, 45);
   elevSlider.id = 'slider-elevation';
   elevSlider.oninput = () => {
     elevVal.textContent = elevSlider.value;
@@ -175,8 +175,8 @@ export default function createUI(env, scene, options = {}) {
   };
   row('Elevation', elevSlider, elevVal);
 
-  const azimVal = valueSpan('180');
-  const azimSlider = slider(0, 360, 1, 180);
+  const azimVal = valueSpan('200');
+  const azimSlider = slider(0, 360, 1, 200);
   azimSlider.id = 'slider-azimuth';
   azimSlider.oninput = () => {
     azimVal.textContent = azimSlider.value;
@@ -189,8 +189,8 @@ export default function createUI(env, scene, options = {}) {
   // ──────────────────────────────────────────────────────────────────
   section('Atmosphere');
 
-  const fogVal = valueSpan('0.0012');
-  const fogSlider = slider(0, 0.006, 0.0001, env.getFogDensity());
+  const fogVal = valueSpan('0.0004');
+  const fogSlider = slider(0, 0.003, 0.0001, env.getFogDensity());
   fogSlider.id = 'slider-fog';
   fogSlider.oninput = () => {
     const v = Number(fogSlider.value);
@@ -238,6 +238,32 @@ export default function createUI(env, scene, options = {}) {
     body.appendChild(statsToggle);
   }
 
+  // ── Coordinate HUD toggle ───────────────────────────────────────
+  {
+    const hudToggle = document.createElement('div');
+    hudToggle.className = 'cp-row cp-toggle-row';
+
+    const hudLabel = document.createElement('label');
+    hudLabel.className = 'cp-label';
+    hudLabel.textContent = 'Coordinates';
+
+    const hudCheck = document.createElement('input');
+    hudCheck.type = 'checkbox';
+    hudCheck.id = 'toggle-coords';
+    hudCheck.checked = true;
+    hudCheck.className = 'cp-checkbox';
+    hudCheck.onchange = () => {
+      const hud = window.__coordHud || document.getElementById('coord-hud');
+      if (hud) {
+        hud.classList.toggle('hidden', !hudCheck.checked);
+      }
+    };
+
+    hudToggle.appendChild(hudLabel);
+    hudToggle.appendChild(hudCheck);
+    body.appendChild(hudToggle);
+  }
+
   // ──────────────────────────────────────────────────────────────────
   // 6. Controls help
   // ──────────────────────────────────────────────────────────────────
@@ -247,10 +273,20 @@ export default function createUI(env, scene, options = {}) {
   controlsList.className = 'cp-controls-list';
   controlsList.innerHTML = `
     <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</div>
-    <div><kbd>Space</kbd> Ascend · <kbd>Ctrl</kbd> Descend</div>
+    <div><kbd>Space</kbd> Ascend · <kbd>C</kbd> Descend</div>
     <div><kbd>Shift</kbd> Sprint · <kbd>Esc</kbd> Release cursor</div>
   `;
   body.appendChild(controlsList);
+
+  // ── Exit Button ──────────────────────────────────────────────────
+  const exitBtn = document.createElement('button');
+  exitBtn.className = 'cp-btn cp-btn-danger';
+  exitBtn.textContent = 'Exit to Title Screen';
+  exitBtn.style.marginTop = '16px';
+  exitBtn.onclick = () => {
+    window.dispatchEvent(new CustomEvent('ui:exitToMenu'));
+  };
+  body.appendChild(exitBtn);
 
   // ── Credits ────────────────────────────────────────────────────────
   const credits = document.createElement('div');

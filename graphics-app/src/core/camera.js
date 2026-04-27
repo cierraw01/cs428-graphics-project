@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { getTerrainHeight } from '../terrain/index.js';
 
 const MOVE_SPEED = 50;
 const SPRINT_MULTIPLIER = 2.5;
+const PLAYER_HEIGHT = 2;  // metres above terrain surface
 
 export function createCamera(domElement) {
   const camera = new THREE.PerspectiveCamera(
@@ -20,6 +22,7 @@ export function createCamera(domElement) {
   const overlay = document.createElement('div');
   overlay.id = 'pointer-lock-overlay';
   overlay.textContent = 'Click to fly';
+  overlay.style.display = 'none';   // hidden initially; shown only after first Esc
   domElement.parentElement.appendChild(overlay);
 
   overlay.addEventListener('click', () => controls.lock());
@@ -51,7 +54,7 @@ export function createCamera(domElement) {
     if (keysPressed.has('KeyA')) direction.x -= 1;
     if (keysPressed.has('KeyD')) direction.x += 1;
     if (keysPressed.has('Space')) direction.y += 1;
-    if (keysPressed.has('ControlLeft')) direction.y -= 1;
+    if (keysPressed.has('KeyC')) direction.y -= 1;
 
     if (direction.lengthSq() > 0) {
       direction.normalize();
@@ -60,6 +63,10 @@ export function createCamera(domElement) {
       controls.moveForward(-direction.z * speed * delta);
       camera.position.y += direction.y * speed * delta;
     }
+
+    // ── Terrain collision — prevent camera from clipping underground ──
+    const groundY = getTerrainHeight(camera.position.x, camera.position.z);
+    camera.position.y = Math.max(camera.position.y, groundY + PLAYER_HEIGHT);
   }
 
   return { camera, controls, update };

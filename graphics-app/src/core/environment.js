@@ -20,28 +20,28 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 
 // ─── Defaults ────────────────────────────────────────────────────────
 
-const DEFAULT_SUN_ELEVATION = 30;
-const DEFAULT_SUN_AZIMUTH   = 180;
-const DEFAULT_FOG_DENSITY   = 0.0012;
+const DEFAULT_SUN_ELEVATION = 45;
+const DEFAULT_SUN_AZIMUTH = 200;
+const DEFAULT_FOG_DENSITY = 0.0004;
 
 // ─── Colour palettes for time-of-day interpolation ───────────────────
 
 /** Sky/fog colour at various sun elevations. */
-const FOG_NIGHT   = new THREE.Color(0x0a1628);
-const FOG_SUNSET  = new THREE.Color(0xd4875e);
-const FOG_DAY     = new THREE.Color(0x9ec5e8);
+const FOG_NIGHT = new THREE.Color(0x070d1a);
+const FOG_SUNSET = new THREE.Color(0xc47040);
+const FOG_DAY = new THREE.Color(0x6ba3cc);
 
-const LIGHT_NIGHT  = new THREE.Color(0x223355);
+const LIGHT_NIGHT = new THREE.Color(0x223355);
 const LIGHT_SUNSET = new THREE.Color(0xff9944);
-const LIGHT_DAY    = new THREE.Color(0xfff4e0);
+const LIGHT_DAY = new THREE.Color(0xfff4e0);
 
-const HEMI_SKY_NIGHT   = new THREE.Color(0x111833);
-const HEMI_SKY_SUNSET  = new THREE.Color(0xcc7744);
-const HEMI_SKY_DAY     = new THREE.Color(0x87ceeb);
+const HEMI_SKY_NIGHT = new THREE.Color(0x111833);
+const HEMI_SKY_SUNSET = new THREE.Color(0xcc7744);
+const HEMI_SKY_DAY = new THREE.Color(0x87ceeb);
 
-const HEMI_GND_NIGHT   = new THREE.Color(0x050508);
-const HEMI_GND_SUNSET  = new THREE.Color(0x332211);
-const HEMI_GND_DAY     = new THREE.Color(0x553311);
+const HEMI_GND_NIGHT = new THREE.Color(0x050508);
+const HEMI_GND_SUNSET = new THREE.Color(0x332211);
+const HEMI_GND_DAY = new THREE.Color(0x553311);
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -75,10 +75,10 @@ export function createEnvironment(scene) {
   scene.add(sky);
 
   const skyUniforms = sky.material.uniforms;
-  skyUniforms['turbidity'].value        = 4;
-  skyUniforms['rayleigh'].value         = 2;
-  skyUniforms['mieCoefficient'].value   = 0.005;
-  skyUniforms['mieDirectionalG'].value  = 0.82;
+  skyUniforms['turbidity'].value = 2;
+  skyUniforms['rayleigh'].value = 1.2;
+  skyUniforms['mieCoefficient'].value = 0.003;
+  skyUniforms['mieDirectionalG'].value = 0.85;
 
   // --- Fog (exponential²) ---
   const fogColor = new THREE.Color();
@@ -96,29 +96,29 @@ export function createEnvironment(scene) {
   // --- Directional light (sun) with shadows ---
   const sunLight = new THREE.DirectionalLight(0xfff4e0, 1.8);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width  = 2048;
+  sunLight.shadow.mapSize.width = 2048;
   sunLight.shadow.mapSize.height = 2048;
   sunLight.shadow.bias = -0.0005;
   sunLight.shadow.normalBias = 0.02;
 
   const shadowCam = sunLight.shadow.camera;
-  shadowCam.left   = -150;
-  shadowCam.right  =  150;
-  shadowCam.top    =  150;
+  shadowCam.left = -150;
+  shadowCam.right = 150;
+  shadowCam.top = 150;
   shadowCam.bottom = -150;
-  shadowCam.near   =  0.5;
-  shadowCam.far    =  600;
+  shadowCam.near = 0.5;
+  shadowCam.far = 600;
 
   scene.add(sunLight);
   scene.add(sunLight.target);
 
   // --- Sun position vector ---
   const sunPosition = new THREE.Vector3();
-  const _tmpColor   = new THREE.Color();
+  const _tmpColor = new THREE.Color();
 
   // --- State ---
   let currentElevation = DEFAULT_SUN_ELEVATION;
-  let currentAzimuth   = DEFAULT_SUN_AZIMUTH;
+  let currentAzimuth = DEFAULT_SUN_AZIMUTH;
   let currentFogDensity = DEFAULT_FOG_DENSITY;
 
   /**
@@ -126,9 +126,9 @@ export function createEnvironment(scene) {
    */
   function setSunPosition(elevation, azimuth) {
     currentElevation = elevation;
-    currentAzimuth   = azimuth;
+    currentAzimuth = azimuth;
 
-    const phi   = THREE.MathUtils.degToRad(90 - elevation);
+    const phi = THREE.MathUtils.degToRad(90 - elevation);
     const theta = THREE.MathUtils.degToRad(azimuth);
 
     sunPosition.setFromSphericalCoords(1, phi, theta);
@@ -139,9 +139,9 @@ export function createEnvironment(scene) {
 
     // --- Dynamic light intensity ---
     const dayFactor = smoothstep(-5, 30, elevation);
-    sunLight.intensity = THREE.MathUtils.lerp(0.05, 2.0, dayFactor);
-    hemiLight.intensity = THREE.MathUtils.lerp(0.08, 0.7, dayFactor);
-    ambientLight.intensity = THREE.MathUtils.lerp(0.25, 0.05, dayFactor);
+    sunLight.intensity = THREE.MathUtils.lerp(0.05, 1.6, dayFactor);
+    hemiLight.intensity = THREE.MathUtils.lerp(0.08, 0.55, dayFactor);
+    ambientLight.intensity = THREE.MathUtils.lerp(0.25, 0.08, dayFactor);
 
     // --- Dynamic colours ---
     lerpTriple(LIGHT_NIGHT, LIGHT_SUNSET, LIGHT_DAY, elevation, sunLight.color);
@@ -154,8 +154,8 @@ export function createEnvironment(scene) {
     scene.background.copy(fogColor);
 
     // --- Sky turbidity / rayleigh tweak for time of day ---
-    skyUniforms['turbidity'].value = THREE.MathUtils.lerp(1, 6, smoothstep(0, 15, elevation));
-    skyUniforms['rayleigh'].value  = THREE.MathUtils.lerp(0.5, 2.5, smoothstep(5, 40, elevation));
+    skyUniforms['turbidity'].value = THREE.MathUtils.lerp(1, 3, smoothstep(0, 15, elevation));
+    skyUniforms['rayleigh'].value = THREE.MathUtils.lerp(0.5, 1.5, smoothstep(5, 40, elevation));
   }
 
   setSunPosition(DEFAULT_SUN_ELEVATION, DEFAULT_SUN_AZIMUTH);
@@ -183,6 +183,6 @@ export function createEnvironment(scene) {
     setFogDensity,
     getFogDensity,
     getElevation: () => currentElevation,
-    getAzimuth:   () => currentAzimuth,
+    getAzimuth: () => currentAzimuth,
   };
 }
