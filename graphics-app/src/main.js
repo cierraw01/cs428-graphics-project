@@ -309,6 +309,8 @@ function animate() {
   water.update(elapsed);
   updateVFX();
 
+  env.update(env.getElevation(), env.getAzimuth(), camera.position);
+
   // Update coordinate HUD
   coordHud.textContent =
     `X ${camera.position.x.toFixed(0)}  ` +

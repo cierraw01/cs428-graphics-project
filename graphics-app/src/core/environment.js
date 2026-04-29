@@ -124,7 +124,11 @@ export function createEnvironment(scene) {
   /**
    * Recompute sun position and all dynamic colours.
    */
-  function setSunPosition(elevation, azimuth) {
+  function setSunPosition(
+    elevation,
+    azimuth,
+    followPosition = new THREE.Vector3(),
+  ) {
     currentElevation = elevation;
     currentAzimuth = azimuth;
 
@@ -134,8 +138,8 @@ export function createEnvironment(scene) {
     sunPosition.setFromSphericalCoords(1, phi, theta);
     skyUniforms['sunPosition'].value.copy(sunPosition);
 
-    sunLight.position.copy(sunPosition).multiplyScalar(300);
-    sunLight.target.position.set(0, 0, 0);
+    sunLight.position.copy(sunPosition).multiplyScalar(300).add(followPosition);
+    sunLight.target.position.copy(followPosition);
 
     // --- Dynamic light intensity ---
     const dayFactor = smoothstep(-5, 30, elevation);
@@ -161,8 +165,12 @@ export function createEnvironment(scene) {
   setSunPosition(DEFAULT_SUN_ELEVATION, DEFAULT_SUN_AZIMUTH);
 
   // --- Public API ---
-  function update(sunElevation, sunAzimuth) {
-    setSunPosition(sunElevation, sunAzimuth);
+  function update(
+    sunElevation,
+    sunAzimuth,
+    followPosition = new THREE.Vector3(),
+  ) {
+    setSunPosition(sunElevation, sunAzimuth, followPosition);
   }
 
   function setFogDensity(density) {
