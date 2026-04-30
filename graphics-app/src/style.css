@@ -826,3 +826,48 @@ input[type="range"]::-moz-range-thumb {
 .stats-panel {
   opacity: 0.85 !important;
 }
+
+#onboarding-overlay {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 99999;
+
+  padding: 18px 22px;
+  max-width: 280px;
+
+  background: rgba(12, 14, 20, 0.72);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  transition: opacity 0.25s ease;
+}
+
+#onboarding-overlay h2 {
+  margin-bottom: 12px;
+
+  font-size: 18px;
+  font-weight: 600;
+
+  color: #7ec8e3;
+  letter-spacing: 0.03em;
+}
+
+#onboarding-overlay p {
+  margin: 6px 0;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  color: rgba(255, 255, 255, 0.82);
+}

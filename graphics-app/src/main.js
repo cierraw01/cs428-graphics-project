@@ -21,7 +21,7 @@ import {
 import { createTerrain, updateTerrain, setTerrainConfig } from './terrain/index.js';
 import createUI from './ui/index.js';
 import { createVFX, updateVFX, toggleRain } from './vfx/index.js'; 
-
+import { createAmbientAudio, startAmbientAudio, setAmbientMode, toggleRainAudio } from './audio/index.js';
 
 // ─── Stats (FPS counter) ────────────────────────────────────────────
 
@@ -57,6 +57,7 @@ const pp = createPostProcessing(renderer, scene, camera);
 
 const water = createWater(scene);
 createVFX(scene, camera);
+createAmbientAudio();
 
 // ─── UI overlay (hidden until game starts) ──────────────────────────
 
@@ -72,6 +73,20 @@ coordHud.style.display = 'none';
 document.body.appendChild(coordHud);
 
 window.__coordHud = coordHud;
+const onboarding = document.createElement('div');
+onboarding.id = 'onboarding-overlay';
+onboarding.innerHTML = `
+  <div>
+    <h2>Controls</h2>
+    <p>WASD: Move</p>
+    <p>Mouse: Look around</p>
+    <p>R: Toggle rain</p>
+    <p>ESC: Unlock mouse</p>
+    <p>Press H to hide this help screen.</p>
+  </div>
+`;
+onboarding.style.display = 'none';
+document.body.appendChild(onboarding); 
 
 // ─── Loading screen helpers ─────────────────────────────────────────
 
@@ -240,6 +255,9 @@ async function startGame() {
   coordHud.style.display = '';
   stats.dom.style.display = '';
 
+  startAmbientAudio();
+  onboarding.style.display = '';
+
   // 7. Auto-lock pointer (takes user straight into the game)
   try {
     controls.lock();
@@ -283,6 +301,8 @@ window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'r') {
     const rainState = toggleRain();
 
+    toggleRainAudio();
+
     console.log(
       rainState
         ? 'Rain enabled'
@@ -290,7 +310,36 @@ window.addEventListener('keydown', (event) => {
     );
   }
 });
+// Ambient audio switching based on UI preset clicks
+document.addEventListener('click', (event) => {
+  const clickedText = event.target.textContent?.toLowerCase() || '';
 
+  if (clickedText.includes('night')) {
+    setAmbientMode('night');
+    console.log('Night audio enabled');
+  }
+
+  if (
+    clickedText.includes('day') ||
+    clickedText.includes('dawn') ||
+    clickedText.includes('sunset') ||
+    clickedText.includes('morning') ||
+    clickedText.includes('noon')
+  ) {
+    setAmbientMode('day');
+    console.log('Day/dawn/sunset audio enabled');
+  }
+});
+
+// Onboarding overlay toggle
+window.addEventListener('keydown', (event) => {
+  if (event.key.toLowerCase() === 'h') {
+    onboarding.style.display =
+      onboarding.style.display === 'none'
+        ? ''
+        : 'none';
+  }
+});
 // ─── Clock ──────────────────────────────────────────────────────────
 
 const clock = new THREE.Clock();
